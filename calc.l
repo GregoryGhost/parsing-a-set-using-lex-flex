@@ -17,7 +17,7 @@ This file is part of Reverse Notation Calc.
 
 */
 
-#include "mystack.h"
+#include <vector>
 int int_value;
 
 typedef enum {
@@ -30,9 +30,9 @@ typedef enum {
     LexUnknown,
 } LexType;
 
-my_stack stack;
+std::vector<int> _stack;
 
-int end_file;
+int _end_file;
 
 %}
 
@@ -71,80 +71,72 @@ number    {digit}+
 <SKIPERROR>[^\n]* {}
 %%
 
+int get_back(){
+    int result = _stack.back();
+    _stack.pop_back();
+    return result;
+}
+
 int process_command(int token)
 {
     fprintf(stderr, "token: %d\n", token);
 
     switch (token) {
     case LexNumber:
-        my_stack_push(&stack, int_value);
-        if (my_stack_is_full(&stack)) {
-            return -1;
-        }
+        _stack.push_back(int_value);
         break;
     case LexPlus: {
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int a=my_stack_pull(&stack);
+        int a=get_back();
 
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int b=my_stack_pull(&stack);
+        int b=get_back();
 
-        my_stack_push(&stack, a+b);
-        if (my_stack_is_full(&stack)) {
-            return -1;
-        }
+        _stack.push_back(b+a);
         break;}
     case LexMinus: {
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int a=my_stack_pull(&stack);
+        int a=get_back();
 
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int b=my_stack_pull(&stack);
+        int b=get_back();
 
-        my_stack_push(&stack, b-a);
-        if (my_stack_is_full(&stack)) {
-            return -1;
-        }
+        _stack.push_back(b-a);
         break;}
     case LexDiv: {
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int a=my_stack_pull(&stack);
+        int a=get_back();
 
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int b=my_stack_pull(&stack);
+        int b=get_back();
 
-        my_stack_push(&stack, b/a);
-        if (my_stack_is_full(&stack)) {
-            return -1;
-        }
+        _stack.push_back(b/a);
         break;}
     case LexMult: {
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int a=my_stack_pull(&stack);
+        int a=get_back();
 
-        if (my_stack_is_empty(&stack)) {
+        if (_stack.empty()) {
             return -1;
         }
-        int b=my_stack_pull(&stack);
+        int b=get_back();
 
-        my_stack_push(&stack, b*a);
-        if (my_stack_is_full(&stack)) {
-            return -1;
-        }
+        _stack.push_back(b*a);
+
         break;}
     case LexEnd:
     case 0:
@@ -159,31 +151,37 @@ int process_command(int token)
 int calc_line()
 {
     int token = yylex();
-    if (token == 0) {
+    if (token == 0)
+    {
         return 1;
     }
 
-    while (1) {
+    while (1)
+    {
         int cmd_res = process_command(token);
-        if (cmd_res == 0) {
+        if (cmd_res == 0)
+        {
             break;
         }
-        else if (cmd_res == -1) {
+        else if (cmd_res == -1)
+        {
             fprintf(stderr, "Syntax error\n");
             return 0;
         }
         token = yylex();
     }
 
-    if (my_stack_is_empty(&stack)) {
+    if (_stack.empty())
+    {
         fprintf(stderr, "Stack is empty but required value\n");
         return 0;
     }
 
-    int result = my_stack_pull(&stack);
+    int result = get_back();
     fprintf(yyout, "%d ", result);
 
-    if (!my_stack_is_empty(&stack)) {
+    if (!_stack.empty())
+    {
         fprintf(stderr, "Stack not empty after calculation\n");
         return 0;
     }
@@ -193,15 +191,18 @@ int calc_line()
 
 void calc()
 {
-    while (!end_file) {
+    while (!_end_file)
+    {
         fprintf(stderr, "parse line\n");
-        if (calc_line() == 0) {
+        if (calc_line() == 0)
+        {
             printf("FAIL\n");
             BEGIN(SKIPERROR);
             yylex();
             BEGIN(INITIAL);
         }
-        else {
+        else
+        {
             printf("OK\n");
         }
         fprintf(stderr, "line parsed\n");
@@ -210,17 +211,16 @@ void calc()
 
 int main(void)
 {
-    my_stack_init(&stack, 100);
-    end_file = 0;
+    _end_file = 0;
 
     calc();
 
-    my_stack_done(&stack);
+    _stack.clear();
     return 0;
 }
 
 int yywrap(void)
 {
-    end_file = 1;
+    _end_file = 1;
     return 1;
 }
