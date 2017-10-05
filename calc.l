@@ -26,6 +26,7 @@ typedef enum {
     LexMinus,
     LexDiv,
     LexMult,
+    LexSet,
     LexEnd,
     LexUnknown,
 } LexType;
@@ -44,30 +45,53 @@ number    ({digit}|{digit}{dot}{digit})
 
 %%
 
-{number}	{
-		  double_value=atof(yytext);
-		  fprintf(stderr, "found %f\n", double_value);
-		  return LexNumber; }
-\+		{
-		  fprintf(stderr, "plus\n");
-		  return LexPlus; }
-\-		{
-		  fprintf(stderr, "minus\n");
-		  return LexMinus; }
-\/		{
-		  fprintf(stderr, "div\n");
-		  return LexDiv; }
-\*		{
-		  fprintf(stderr, "mult\n");
-		  return LexMult; }
-^[ \t]*\n	{
-		  fprintf(stderr, "empty line\n");
-		}
-\n		{
-		  fprintf(stderr, "CR\n");
-		  return LexEnd; }
-[ \t]		{ }
-.		{ return LexUnknown; }
+{number}	                                            {
+		double_value=atof(yytext);
+		fprintf(stderr, "found %f\n", double_value);
+        return LexNumber;                               
+                                                        }
+\+		                                                {
+		fprintf(stderr, "plus\n");
+        return LexPlus;                                 
+                                                        }
+\-		                                                {
+		fprintf(stderr, "minus\n");
+        return LexMinus;                                
+                                                        }
+\/		                                                {
+		fprintf(stderr, "div\n");
+        return LexDiv;                                  
+                                                        }
+\*		                                                {
+		fprintf(stderr, "mult\n");
+        return LexMult;                                 }
+          
+\[                                                      {
+        fprintf(stderr, "set\n");
+        return LexSet;                                  
+                                                        }
+,                                                       {
+        //code
+                                                        }
+,\]                                                     {
+        //code      
+                                                        }
+\]                                                      {
+        //code      
+                                                        }
+^[ \t]*\n	                                            {
+		fprintf(stderr, "empty line\n");
+		                                                }
+\n		                                                {
+		fprintf(stderr, "CR\n");
+        return LexEnd;                                  
+                                                        }
+[ \t]		                                            {
+        //do nothing
+                                                        }
+.		                                                {
+        return LexUnknown; 
+                                                        }
 
 <SKIPERROR>[^\n]* {}
 %%
@@ -194,19 +218,19 @@ void calc()
 {
     while (!_end_file)
     {
-        fprintf(stderr, "\033[32m{\033[0m\n");
+        fprintf(stderr, "\033[32m%s\033[0m\n", "{");
         if (calc_line() == 0)
         {
-            printf("FAIL\n");
+            printf("\033[31m%s\033[0m\n", "FAIL");
             BEGIN(SKIPERROR);
             yylex();
             BEGIN(INITIAL);
         }
         else
         {
-            printf("OK\n");
+            printf("\033[32m%s\033[0m\n", "OK");
         }
-        fprintf(stderr, "\033[32m}\033[0m\n");
+        fprintf(stderr, "\033[32m%s\033[0m\n", "}");
     }
 }
 
