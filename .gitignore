@@ -24,3 +24,4 @@
 
 # Specific source - gen by lex
 calc.c
+calc.l.txt

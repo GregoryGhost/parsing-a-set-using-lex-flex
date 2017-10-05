@@ -18,7 +18,7 @@ This file is part of Reverse Notation Calc.
 */
 
 #include <vector>
-int int_value;
+double double_value;
 
 typedef enum {
     LexNumber=1001,
@@ -30,7 +30,7 @@ typedef enum {
     LexUnknown,
 } LexType;
 
-std::vector<int> _stack;
+std::vector<float> _stack;
 
 int _end_file;
 
@@ -38,14 +38,15 @@ int _end_file;
 
 %s SKIPERROR
 
-digit     [0-9]
-number    {digit}+
+digit     [0-9]+
+dot       \.
+number    ({digit}|{digit}{dot}{digit})
 
 %%
 
 {number}	{
-		  int_value=atoi(yytext);
-		  fprintf(stderr, "found %d\n", int_value);
+		  double_value=atof(yytext);
+		  fprintf(stderr, "found %f\n", double_value);
 		  return LexNumber; }
 \+		{
 		  fprintf(stderr, "plus\n");
@@ -71,8 +72,8 @@ number    {digit}+
 <SKIPERROR>[^\n]* {}
 %%
 
-int get_back(){
-    int result = _stack.back();
+double stack_get_back(){
+    double result = _stack.back();
     _stack.pop_back();
     return result;
 }
@@ -83,18 +84,18 @@ int process_command(int token)
 
     switch (token) {
     case LexNumber:
-        _stack.push_back(int_value);
+        _stack.push_back(double_value);
         break;
     case LexPlus: {
         if (_stack.empty()) {
             return -1;
         }
-        int a=get_back();
+        double a=stack_get_back();
 
         if (_stack.empty()) {
             return -1;
         }
-        int b=get_back();
+        double b=stack_get_back();
 
         _stack.push_back(b+a);
         break;}
@@ -102,12 +103,12 @@ int process_command(int token)
         if (_stack.empty()) {
             return -1;
         }
-        int a=get_back();
+        double a=stack_get_back();
 
         if (_stack.empty()) {
             return -1;
         }
-        int b=get_back();
+        double b=stack_get_back();
 
         _stack.push_back(b-a);
         break;}
@@ -115,12 +116,12 @@ int process_command(int token)
         if (_stack.empty()) {
             return -1;
         }
-        int a=get_back();
+        double a=stack_get_back();
 
         if (_stack.empty()) {
             return -1;
         }
-        int b=get_back();
+        double b=stack_get_back();
 
         _stack.push_back(b/a);
         break;}
@@ -128,12 +129,12 @@ int process_command(int token)
         if (_stack.empty()) {
             return -1;
         }
-        int a=get_back();
+        double a=stack_get_back();
 
         if (_stack.empty()) {
             return -1;
         }
-        int b=get_back();
+        double b=stack_get_back();
 
         _stack.push_back(b*a);
 
@@ -177,8 +178,8 @@ int calc_line()
         return 0;
     }
 
-    int result = get_back();
-    fprintf(yyout, "%d ", result);
+    double result = stack_get_back();
+    fprintf(yyout, "%f ", result);
 
     if (!_stack.empty())
     {
@@ -193,7 +194,7 @@ void calc()
 {
     while (!_end_file)
     {
-        fprintf(stderr, "parse line\n");
+        fprintf(stderr, "\033[32m{\033[0m\n");
         if (calc_line() == 0)
         {
             printf("FAIL\n");
@@ -205,7 +206,7 @@ void calc()
         {
             printf("OK\n");
         }
-        fprintf(stderr, "line parsed\n");
+        fprintf(stderr, "\033[32m}\033[0m\n");
     }
 }
 
