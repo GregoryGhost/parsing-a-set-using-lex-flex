@@ -17,8 +17,27 @@ This file is part of Reverse Notation Calc.
 
 */
 
-#include <vector>
-double double_value;
+#include <stack>
+#include <set>
+#include <iostream>
+#include <functional>
+
+typedef enum {
+    DOUBLE,
+    MSET
+} TypeOfStack;
+
+std::stack<double> _stack;
+
+typedef std::multiset<double> MULTISET;
+std::stack<MULTISET> _stack_sets;
+MULTISET _current_set;
+std::stack<TypeOfStack> _guidance_for_interp;
+
+double _double_value;
+bool _inside_of_set = false;
+bool _last_number_of_set = false;
+int _end_file;
 
 typedef enum {
     LexNumber=1001,
@@ -27,13 +46,12 @@ typedef enum {
     LexDiv,
     LexMult,
     LexSet,
+    LexIsSetInclude,
     LexEnd,
     LexUnknown,
+    LexErrorSet
 } LexType;
 
-std::vector<float> _stack;
-
-int _end_file;
 
 %}
 
@@ -46,9 +64,18 @@ number    ({digit}|{digit}{dot}{digit})
 %%
 
 {number}	                                            {
-		double_value=atof(yytext);
-		fprintf(stderr, "found %f\n", double_value);
-        return LexNumber;                               
+        _double_value=atof(yytext);
+        if(_inside_of_set)
+        {
+            _current_set.insert(_double_value);
+            std::cout << "Add elem into set:" << _double_value << " size:" << _current_set.size() << std::endl;
+            _last_number_of_set = true;
+        }
+        else
+        {
+            fprintf(stderr, "found %f\n", _double_value);
+            return LexNumber; 
+        }                              
                                                         }
 \+		                                                {
 		fprintf(stderr, "plus\n");
@@ -65,19 +92,50 @@ number    ({digit}|{digit}{dot}{digit})
 \*		                                                {
 		fprintf(stderr, "mult\n");
         return LexMult;                                 }
-          
+
+\?		                                                {
+        fprintf(stderr, "isSetInclude\n");
+        return LexIsSetInclude;                         }
+
 \[                                                      {
-        fprintf(stderr, "set\n");
-        return LexSet;                                  
+        if (_inside_of_set) 
+        {
+            return LexErrorSet;
+        } 
+        else 
+        {
+            std::cout << "FOUND SET" << std::endl;
+            _inside_of_set = true;
+            _last_number_of_set = false;
+        }                                 
                                                         }
 ,                                                       {
-        //code
+        if (!_inside_of_set || !_last_number_of_set) 
+        {
+            return LexErrorSet;
+        } 
+        else 
+        {
+            _last_number_of_set = false;
+        }
                                                         }
 ,\]                                                     {
-        //code      
+        return LexErrorSet;
                                                         }
 \]                                                      {
-        //code      
+        if (!_inside_of_set || !_last_number_of_set) 
+        {
+            return LexErrorSet;
+        } 
+        else {
+            std::cout << "END SET" << std::endl;
+
+            _last_number_of_set = false;
+            _inside_of_set = false;
+            _stack_sets.push(_current_set);
+            _current_set.clear();
+            return LexSet;
+        }      
                                                         }
 ^[ \t]*\n	                                            {
 		fprintf(stderr, "empty line\n");
@@ -96,10 +154,53 @@ number    ({digit}|{digit}{dot}{digit})
 <SKIPERROR>[^\n]* {}
 %%
 
-double stack_get_back(){
-    double result = _stack.back();
-    _stack.pop_back();
-    return result;
+MULTISET& union_of_sets(MULTISET& a_set, MULTISET& b_set)
+{
+    MULTISET& res_set = *(new MULTISET);
+    for(auto a:a_set){
+        res_set.insert(a);
+    }
+    for(auto b:b_set){
+        res_set.insert(b);
+    }
+    return res_set;
+} 
+
+MULTISET& intersection_of_sets(MULTISET& a_set, MULTISET& b_set)
+{
+    std::set<double> temp_set;
+
+    for(auto a:a_set){
+        if((*b_set.find(a))==a){
+            temp_set.insert(a);
+        }
+    }
+    MULTISET& res_set = *(new MULTISET);
+    for(auto t:temp_set){
+        res_set.insert(t);
+    }
+    return res_set;
+} 
+
+double checkBelongNumberToSet(MULTISET& b_set, double a_num)
+{
+    return (*b_set.find(a_num))==a_num ? 1.0 : 0.0;
+}
+
+void printSet(MULTISET& a_set)
+{
+    std::cout << "set(";
+    if(!a_set.empty())
+    {
+        for(auto a: a_set){
+            std::cout << a << ",";
+        }
+    }
+    else
+    {
+        std::cout << "empty";
+    }
+    std::cout << ")" << std::endl;
 }
 
 int process_command(int token)
@@ -108,60 +209,147 @@ int process_command(int token)
 
     switch (token) {
     case LexNumber:
-        _stack.push_back(double_value);
+        _stack.push(_double_value);
+        _guidance_for_interp.push(DOUBLE);
         break;
+    case LexSet:{
+        if(_stack_sets.size()>0){
+            _guidance_for_interp.push(MSET);
+        }
+        break;}
     case LexPlus: {
-        if (_stack.empty()) {
-            return -1;
-        }
-        double a=stack_get_back();
+        if (_guidance_for_interp.empty()) return -1;
+        auto right_operand = _guidance_for_interp.top();
+        _guidance_for_interp.pop();
 
-        if (_stack.empty()) {
-            return -1;
-        }
-        double b=stack_get_back();
+        if (_guidance_for_interp.empty()) return -1;
+        auto left_operand = _guidance_for_interp.top();
+        _guidance_for_interp.pop();
 
-        _stack.push_back(b+a);
+        auto tuple_of_operands = right_operand * left_operand;
+        switch(tuple_of_operands) {
+            case (DOUBLE * DOUBLE):{
+                if(_stack.empty()) return -1;
+                auto a = _stack.top();
+                _stack.pop();
+
+                if(_stack.empty()) return -1;
+                auto b = _stack.top();
+                _stack.pop();
+
+                _stack.push(a+b);
+                _guidance_for_interp.push(DOUBLE);
+                break;
+            };
+            case (MSET * MSET):{
+                if(_stack_sets.empty()) return -1;
+                auto a_set = _stack_sets.top();
+                _stack_sets.pop();
+
+                printSet(a_set);
+
+                if(_stack_sets.empty()) return -1;
+                auto b_set = _stack_sets.top();
+                _stack_sets.pop();
+
+                printSet(b_set);
+
+                auto union_ab = union_of_sets(a_set, b_set);
+                printSet(union_ab);
+                _stack_sets.push(union_ab);
+                _guidance_for_interp.push(MSET);
+                break;
+            }
+        }
         break;}
     case LexMinus: {
-        if (_stack.empty()) {
-            return -1;
-        }
-        double a=stack_get_back();
+        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
+        if(_stack.empty()) return -1;
+        double a=_stack.top();
+        _stack.pop();
+        _guidance_for_interp.pop();
 
-        if (_stack.empty()) {
-            return -1;
-        }
-        double b=stack_get_back();
+        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
+        if(_stack.empty()) return -1;
+        double b=_stack.top();
+        _stack.pop();
+        _guidance_for_interp.pop();
 
-        _stack.push_back(b-a);
+        _stack.push(b-a);
+        _guidance_for_interp.push(DOUBLE);
         break;}
     case LexDiv: {
-        if (_stack.empty()) {
-            return -1;
-        }
-        double a=stack_get_back();
+        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
+        if(_stack.empty()) return -1;
+        double a=_stack.top();
+        _stack.pop();
+        _guidance_for_interp.pop();
 
-        if (_stack.empty()) {
-            return -1;
-        }
-        double b=stack_get_back();
+        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
+        if(_stack.empty()) return -1;
+        double b=_stack.top();
+        _stack.pop();
+        _guidance_for_interp.pop();
 
-        _stack.push_back(b/a);
+        _stack.push(b/a);
+        _guidance_for_interp.push(DOUBLE);
         break;}
     case LexMult: {
-        if (_stack.empty()) {
-            return -1;
+        if (_guidance_for_interp.empty()) return -1;
+        auto right_operand = _guidance_for_interp.top();
+        _guidance_for_interp.pop();
+
+        if (_guidance_for_interp.empty()) return -1;
+        auto left_operand = _guidance_for_interp.top();
+        _guidance_for_interp.pop();
+
+        auto tuple_of_operands = right_operand * left_operand;
+        switch(tuple_of_operands) {
+            case (DOUBLE * DOUBLE):{
+                if(_stack.empty()) return -1;
+                auto a = _stack.top();
+                _stack.pop();
+
+                if(_stack.empty()) return -1;
+                auto b = _stack.top();
+                _stack.pop();
+
+                _stack.push(a*b);
+                _guidance_for_interp.push(DOUBLE);
+                break;
+            };
+            case (MSET * MSET):{
+                if(_stack_sets.empty()) return -1;
+                auto a_set = _stack_sets.top();
+                _stack_sets.pop();
+
+                if(_stack_sets.empty()) return -1;
+                auto b_set = _stack_sets.top();
+                _stack_sets.pop();
+
+                auto is_ab = intersection_of_sets(a_set, b_set);
+                _stack_sets.push(is_ab);
+                _guidance_for_interp.push(MSET);
+                break;
+            }
         }
-        double a=stack_get_back();
+        break;}
+    case LexIsSetInclude:{
+        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
+        if(_stack.empty()) return -1;
+        double a_num=_stack.top();
+        _stack.pop();
+        _guidance_for_interp.pop();
 
-        if (_stack.empty()) {
-            return -1;
-        }
-        double b=stack_get_back();
+        if(_guidance_for_interp.top()!=MSET || _guidance_for_interp.empty()) return -1;
+        if(_stack_sets.empty()) return -1;
+        auto b_set=_stack_sets.top();
+        _stack_sets.pop();
+        _guidance_for_interp.pop();
 
-        _stack.push_back(b*a);
-
+        auto isBelongNumber = checkBelongNumberToSet(b_set, a_num);
+        _stack.push(isBelongNumber);
+        _guidance_for_interp.push(DOUBLE);
         break;}
     case LexEnd:
     case 0:
@@ -196,25 +384,50 @@ int calc_line()
         token = yylex();
     }
 
-    if (_stack.empty())
-    {
-        fprintf(stderr, "Stack is empty but required value\n");
+    if(_guidance_for_interp.empty()){
+        std::cout << "Nothing interp" << std:: endl;
         return 0;
     }
 
-    double result = stack_get_back();
-    fprintf(yyout, "%f ", result);
+    if (_stack.empty() && _stack_sets.empty()) {
+        std::cout << "Both stacks are empty but a value is required!" << std::endl;
+        return 0;
+    }
 
-    if (!_stack.empty())
+    auto what_doing = _guidance_for_interp.top();
+    _guidance_for_interp.pop();
+
+    switch (what_doing) {
+        case DOUBLE:{
+            if (!_stack.empty()) {
+                double result1 = _stack.top();
+                _stack.pop();
+                std::cout << "RES:" << result1 << std::endl;
+            } 
+            break;
+        }
+        case MSET:{
+            if (!_stack_sets.empty()) 
+            {
+                auto result = _stack_sets.top();
+                _stack_sets.pop();
+                std::cout << "RES:";
+                printSet(result);
+            }
+            break;
+        }
+    }
+
+    if (!_stack.empty() || !_stack_sets.empty())
     {
-        fprintf(stderr, "Stack not empty after calculation\n");
+        fprintf(stderr, "Stacks are not empty after calculation!\n");
         return 0;
     }
 
     return 1;
 }
 
-void calc()
+void run_conveyor()
 {
     while (!_end_file)
     {
@@ -238,9 +451,8 @@ int main(void)
 {
     _end_file = 0;
 
-    calc();
+    run_conveyor();
 
-    _stack.clear();
     return 0;
 }
 
