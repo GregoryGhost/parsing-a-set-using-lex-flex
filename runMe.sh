@@ -6,9 +6,8 @@ mkdir $dirBuild &&
 cd $dirBuild &&
 cmake .. &&
 make &&
-cd $dirProject
-
+cd $dirProject && 
 checkLexCalc
 
-rm -fr $dirBuild
-rm -fr $testLog
+# rm -fr $dirBuild
+# rm -fr $testLog

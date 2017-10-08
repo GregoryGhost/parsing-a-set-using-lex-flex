@@ -6,6 +6,20 @@
 #include <iomanip>
 #include <string>
 
+
+#define GET_ELEMENT_FROM(stack, elem)	\
+ 									     \
+    if(stack.empty()) return -1; 		  \
+    elem = stack.top();           		   \
+    stack.pop();
+
+#define GET_ELEMENT_FROM_STACK_WITH_CHECK(stack_num, guidance_stack, elem) \
+																		    \
+	if(guidance_stack.top()!=DOUBLE || guidance_stack.empty()) return -1;	 \
+	GET_ELEMENT_FROM(stack_num, elem);										  \
+	guidance_stack.pop();
+
+
 typedef std::multiset<double> MULTISET;
 
 typedef enum {

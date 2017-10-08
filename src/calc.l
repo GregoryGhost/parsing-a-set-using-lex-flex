@@ -136,38 +136,27 @@ int process_command(int token)
         }
         break;}
     case LexPlus: {
-        if (_guidance_for_interp.empty()) return -1;
-        auto right_operand = _guidance_for_interp.top();
-        _guidance_for_interp.pop();
-
-        if (_guidance_for_interp.empty()) return -1;
-        auto left_operand = _guidance_for_interp.top();
-        _guidance_for_interp.pop();
+        TypeOfStack right_operand;
+        TypeOfStack left_operand;
+        GET_ELEMENT_FROM(_guidance_for_interp, right_operand);
+        GET_ELEMENT_FROM(_guidance_for_interp, left_operand);
 
         auto tuple_of_operands = right_operand * left_operand;
         switch(tuple_of_operands) {
             case (DOUBLE * DOUBLE):{
-                if(_stack_numbers.empty()) return -1;
-                auto a = _stack_numbers.top();
-                _stack_numbers.pop();
-
-                if(_stack_numbers.empty()) return -1;
-                auto b = _stack_numbers.top();
-                _stack_numbers.pop();
+                double a,b;
+                GET_ELEMENT_FROM(_stack_numbers, a);
+                GET_ELEMENT_FROM(_stack_numbers, b);
 
                 _stack_numbers.push(a+b);
                 _guidance_for_interp.push(DOUBLE);
                 break;
             };
             case (MSET * MSET):{
-                if(_stack_sets.empty()) return -1;
-                auto a_set = _stack_sets.top();
-                _stack_sets.pop();
-
-
-                if(_stack_sets.empty()) return -1;
-                auto b_set = _stack_sets.top();
-                _stack_sets.pop();
+                MULTISET a_set;
+                MULTISET b_set;
+                GET_ELEMENT_FROM(_stack_sets, a_set);
+                GET_ELEMENT_FROM(_stack_sets, b_set);
 
                 auto union_ab = union_of_sets(a_set, b_set);
 
@@ -178,71 +167,47 @@ int process_command(int token)
         }
         break;}
     case LexMinus: {
-        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack_numbers.empty()) return -1;
-        auto a=_stack_numbers.top();
-        _stack_numbers.pop();
-        _guidance_for_interp.pop();
-//GET_ELEMENT_FROM_
-        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack_numbers.empty()) return -1;
-        auto b=_stack_numbers.top();
-        _stack_numbers.pop();
-        _guidance_for_interp.pop();
+        double a,b;
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b);
 
         _stack_numbers.push(b-a);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexDiv: {
-        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack_numbers.empty()) return -1;
-        auto a=_stack_numbers.top();
-        _stack_numbers.pop();
-        _guidance_for_interp.pop();
-
-        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack_numbers.empty()) return -1;
-        auto b=_stack_numbers.top();
-        _stack_numbers.pop();
-        _guidance_for_interp.pop();
+        double a,b;
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b);
 
         _stack_numbers.push(b/a);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexMult: {
-        if (_guidance_for_interp.empty()) return -1;
-        auto right_operand = _guidance_for_interp.top();
-        _guidance_for_interp.pop();
-
-        if (_guidance_for_interp.empty()) return -1;
-        auto left_operand = _guidance_for_interp.top();
-        _guidance_for_interp.pop();
+        TypeOfStack right_operand;
+        TypeOfStack left_operand;
+        GET_ELEMENT_FROM(_guidance_for_interp, right_operand);
+        GET_ELEMENT_FROM(_guidance_for_interp, left_operand);
 
         auto tuple_of_operands = right_operand * left_operand;
+
         switch(tuple_of_operands) {
             case (DOUBLE * DOUBLE):{
-                if(_stack_numbers.empty()) return -1;
-                auto a = _stack_numbers.top();
-                _stack_numbers.pop();
-
-                if(_stack_numbers.empty()) return -1;
-                auto b = _stack_numbers.top();
-                _stack_numbers.pop();
+                double a,b;
+                GET_ELEMENT_FROM(_stack_numbers, a);
+                GET_ELEMENT_FROM(_stack_numbers, b);
 
                 _stack_numbers.push(a*b);
                 _guidance_for_interp.push(DOUBLE);
                 break;
             };
             case (MSET * MSET):{
-                if(_stack_sets.empty()) return -1;
-                auto a_set = _stack_sets.top();
-                _stack_sets.pop();
-
-                if(_stack_sets.empty()) return -1;
-                auto b_set = _stack_sets.top();
-                _stack_sets.pop();
+                MULTISET a_set;
+                MULTISET b_set;
+                GET_ELEMENT_FROM(_stack_sets, a_set);
+                GET_ELEMENT_FROM(_stack_sets, b_set);
 
                 auto is_ab = intersection_of_sets(a_set, b_set);
+
                 _stack_sets.push(is_ab);
                 _guidance_for_interp.push(MSET);
                 break;
@@ -250,19 +215,13 @@ int process_command(int token)
         }
         break;}
     case LexIsSetInclude:{
-        if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack_numbers.empty()) return -1;
-        auto a_num=_stack_numbers.top();
-        _stack_numbers.pop();
-        _guidance_for_interp.pop();
-
-        if(_guidance_for_interp.top()!=MSET || _guidance_for_interp.empty()) return -1;
-        if(_stack_sets.empty()) return -1;
-        auto b_set=_stack_sets.top();
-        _stack_sets.pop();
-        _guidance_for_interp.pop();
+        double a_num;
+        MULTISET b_set;
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a_num);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_sets, _guidance_for_interp, b_set);
 
         auto isBelongNumber = checkBelongNumberToSet(b_set, a_num);
+
         _stack_numbers.push(isBelongNumber);
         _guidance_for_interp.push(DOUBLE);
         break;}
