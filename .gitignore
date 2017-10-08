@@ -25,3 +25,5 @@
 # Specific source - gen by lex
 calc.c
 calc.l.txt
+src/main.cpp
+build/
