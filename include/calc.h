@@ -13,7 +13,7 @@ typedef enum {
     MSET
 } TypeOfStack;
 
-std::stack<double> _stack;
+std::stack<double> _stack_numbers;
 std::stack<MULTISET> _stack_sets;
 MULTISET _current_set;
 std::stack<TypeOfStack> _guidance_for_interp;
@@ -78,7 +78,7 @@ std::string toStr(double d){
 
 void printSet(MULTISET& a_set)
 {
-    std::cout << "set(";
+    std::cerr << "set(";
     std::string elements;
     if(!a_set.empty())
     {
@@ -88,8 +88,8 @@ void printSet(MULTISET& a_set)
     }
     else
     {
-        std::cout << "empty";
+        std::cerr << "empty";
     }
     elements.pop_back();
-    std::cout << elements << ")" << std::endl;
+    std::cerr << elements << ")" << std::endl;
 }

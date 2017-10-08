@@ -34,7 +34,7 @@ number    ({digit}|{digit}{dot}{digit})
         if(_inside_of_set)
         {
             _current_set.insert(_double_value);
-            std::cout << "Add elem into set:" << _double_value << " size:" << _current_set.size() << std::endl;
+            std::cerr << "Add elem into set:" << _double_value << " size:" << _current_set.size() << std::endl;
             _last_number_of_set = true;
         }
         else
@@ -70,7 +70,7 @@ number    ({digit}|{digit}{dot}{digit})
         } 
         else 
         {
-            std::cout << "FOUND SET" << std::endl;
+            std::cerr << "FOUND SET" << std::endl;
             _inside_of_set = true;
             _last_number_of_set = false;
         }                                 
@@ -94,7 +94,7 @@ number    ({digit}|{digit}{dot}{digit})
             return LexErrorSet;
         } 
         else {
-            std::cout << "END SET" << std::endl;
+            std::cerr << "END SET" << std::endl;
 
             _last_number_of_set = false;
             _inside_of_set = false;
@@ -127,7 +127,7 @@ int process_command(int token)
 
     switch (token) {
     case LexNumber:
-        _stack.push(_double_value);
+        _stack_numbers.push(_double_value);
         _guidance_for_interp.push(DOUBLE);
         break;
     case LexSet:{
@@ -147,15 +147,15 @@ int process_command(int token)
         auto tuple_of_operands = right_operand * left_operand;
         switch(tuple_of_operands) {
             case (DOUBLE * DOUBLE):{
-                if(_stack.empty()) return -1;
-                auto a = _stack.top();
-                _stack.pop();
+                if(_stack_numbers.empty()) return -1;
+                auto a = _stack_numbers.top();
+                _stack_numbers.pop();
 
-                if(_stack.empty()) return -1;
-                auto b = _stack.top();
-                _stack.pop();
+                if(_stack_numbers.empty()) return -1;
+                auto b = _stack_numbers.top();
+                _stack_numbers.pop();
 
-                _stack.push(a+b);
+                _stack_numbers.push(a+b);
                 _guidance_for_interp.push(DOUBLE);
                 break;
             };
@@ -164,16 +164,13 @@ int process_command(int token)
                 auto a_set = _stack_sets.top();
                 _stack_sets.pop();
 
-                printSet(a_set);
 
                 if(_stack_sets.empty()) return -1;
                 auto b_set = _stack_sets.top();
                 _stack_sets.pop();
 
-                printSet(b_set);
-
                 auto union_ab = union_of_sets(a_set, b_set);
-                printSet(union_ab);
+
                 _stack_sets.push(union_ab);
                 _guidance_for_interp.push(MSET);
                 break;
@@ -182,34 +179,34 @@ int process_command(int token)
         break;}
     case LexMinus: {
         if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack.empty()) return -1;
-        double a=_stack.top();
-        _stack.pop();
+        if(_stack_numbers.empty()) return -1;
+        auto a=_stack_numbers.top();
+        _stack_numbers.pop();
         _guidance_for_interp.pop();
-
+//GET_ELEMENT_FROM_
         if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack.empty()) return -1;
-        double b=_stack.top();
-        _stack.pop();
+        if(_stack_numbers.empty()) return -1;
+        auto b=_stack_numbers.top();
+        _stack_numbers.pop();
         _guidance_for_interp.pop();
 
-        _stack.push(b-a);
+        _stack_numbers.push(b-a);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexDiv: {
         if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack.empty()) return -1;
-        double a=_stack.top();
-        _stack.pop();
+        if(_stack_numbers.empty()) return -1;
+        auto a=_stack_numbers.top();
+        _stack_numbers.pop();
         _guidance_for_interp.pop();
 
         if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack.empty()) return -1;
-        double b=_stack.top();
-        _stack.pop();
+        if(_stack_numbers.empty()) return -1;
+        auto b=_stack_numbers.top();
+        _stack_numbers.pop();
         _guidance_for_interp.pop();
 
-        _stack.push(b/a);
+        _stack_numbers.push(b/a);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexMult: {
@@ -224,15 +221,15 @@ int process_command(int token)
         auto tuple_of_operands = right_operand * left_operand;
         switch(tuple_of_operands) {
             case (DOUBLE * DOUBLE):{
-                if(_stack.empty()) return -1;
-                auto a = _stack.top();
-                _stack.pop();
+                if(_stack_numbers.empty()) return -1;
+                auto a = _stack_numbers.top();
+                _stack_numbers.pop();
 
-                if(_stack.empty()) return -1;
-                auto b = _stack.top();
-                _stack.pop();
+                if(_stack_numbers.empty()) return -1;
+                auto b = _stack_numbers.top();
+                _stack_numbers.pop();
 
-                _stack.push(a*b);
+                _stack_numbers.push(a*b);
                 _guidance_for_interp.push(DOUBLE);
                 break;
             };
@@ -254,9 +251,9 @@ int process_command(int token)
         break;}
     case LexIsSetInclude:{
         if(_guidance_for_interp.top()!=DOUBLE || _guidance_for_interp.empty()) return -1;
-        if(_stack.empty()) return -1;
-        double a_num=_stack.top();
-        _stack.pop();
+        if(_stack_numbers.empty()) return -1;
+        auto a_num=_stack_numbers.top();
+        _stack_numbers.pop();
         _guidance_for_interp.pop();
 
         if(_guidance_for_interp.top()!=MSET || _guidance_for_interp.empty()) return -1;
@@ -266,7 +263,7 @@ int process_command(int token)
         _guidance_for_interp.pop();
 
         auto isBelongNumber = checkBelongNumberToSet(b_set, a_num);
-        _stack.push(isBelongNumber);
+        _stack_numbers.push(isBelongNumber);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexEnd:
@@ -303,12 +300,12 @@ int calc_line()
     }
 
     if(_guidance_for_interp.empty()){
-        std::cout << "Nothing interp" << std:: endl;
+        std::cerr << "Nothing interp" << std:: endl;
         return 0;
     }
 
-    if (_stack.empty() && _stack_sets.empty()) {
-        std::cout << "Both stacks are empty but a value is required!" << std::endl;
+    if (_stack_numbers.empty() && _stack_sets.empty()) {
+        std::cerr << "Both stacks are empty but a value is required!" << std::endl;
         return 0;
     }
 
@@ -317,10 +314,10 @@ int calc_line()
 
     switch (what_doing) {
         case DOUBLE:{
-            if (!_stack.empty()) {
-                double result1 = _stack.top();
-                _stack.pop();
-                std::cout << "RES:" << result1 << std::endl;
+            if (!_stack_numbers.empty()) {
+                double result1 = _stack_numbers.top();
+                _stack_numbers.pop();
+                std::cerr << "RES:" << result1 << std::endl;
             } 
             break;
         }
@@ -329,14 +326,14 @@ int calc_line()
             {
                 auto result = _stack_sets.top();
                 _stack_sets.pop();
-                std::cout << "RES:";
+                std::cerr << "RES:";
                 printSet(result);
             }
             break;
         }
     }
 
-    if (!_stack.empty() || !_stack_sets.empty())
+    if (!_stack_numbers.empty() || !_stack_sets.empty())
     {
         fprintf(stderr, "Stacks are not empty after calculation!\n");
         return 0;
