@@ -21,3 +21,10 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Specific source - gen by flex, cmake, bash scripts
+calc.c
+calc.l.txt
+src/main.cpp
+build/
+test_output.log

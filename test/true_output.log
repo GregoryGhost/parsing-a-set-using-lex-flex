@@ -1,0 +1,32 @@
+# test_int.txt
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[32mOK[0m
+# test_double.txt
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[32mOK[0m
+# positive_test_set.txt
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+[32mOK[0m
+# negative_test_set.txt
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
+[31mFAIL[0m
