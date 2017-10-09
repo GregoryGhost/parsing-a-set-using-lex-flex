@@ -168,16 +168,26 @@ int process_command(int token)
         break;}
     case LexMinus: {
         double a,b;
+<<<<<<< HEAD
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a);
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b);
+=======
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a, DOUBLE);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b, DOUBLE);
+>>>>>>> dev1
 
         _stack_numbers.push(b-a);
         _guidance_for_interp.push(DOUBLE);
         break;}
     case LexDiv: {
         double a,b;
+<<<<<<< HEAD
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a);
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b);
+=======
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a, DOUBLE);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, b, DOUBLE);
+>>>>>>> dev1
 
         _stack_numbers.push(b/a);
         _guidance_for_interp.push(DOUBLE);
@@ -217,8 +227,13 @@ int process_command(int token)
     case LexIsSetInclude:{
         double a_num;
         MULTISET b_set;
+<<<<<<< HEAD
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a_num);
         GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_sets, _guidance_for_interp, b_set);
+=======
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_numbers, _guidance_for_interp, a_num, DOUBLE);
+        GET_ELEMENT_FROM_STACK_WITH_CHECK(_stack_sets, _guidance_for_interp, b_set, MSET);
+>>>>>>> dev1
 
         auto isBelongNumber = checkBelongNumberToSet(b_set, a_num);
 
